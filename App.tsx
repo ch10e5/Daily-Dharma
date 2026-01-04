@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DharmaWisdom, CachedWisdom, LoadingState, SessionState } from './types';
 import { fetchDailyWisdom, generateWisdomAudio, generateReflectiveEcho } from './services/geminiService';
@@ -65,22 +66,53 @@ function App() {
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') await ctx.resume();
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const now = ctx.currentTime;
+    const masterGain = ctx.createGain();
+    masterGain.connect(ctx.destination);
+    masterGain.gain.setValueAtTime(0, now);
+    masterGain.gain.linearRampToValueAtTime(0.6, now + 0.05);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 6);
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(432, ctx.currentTime); // 432Hz "Healing" frequency
-    osc.frequency.exponentialRampToValueAtTime(108, ctx.currentTime + 3);
+    // Frequencies for a rich Tibetan Singing Bowl / Zen Bell sound
+    // Fundamental and harmonics with slightly detuned values for a "singing" texture
+    const harmonics = [
+      { f: 172.0, g: 0.5, type: 'sine' as const },  // Fundamental (F3)
+      { f: 474.7, g: 0.2, type: 'sine' as const },  // ~2.76x
+      { f: 928.8, g: 0.1, type: 'sine' as const },  // ~5.4x
+      { f: 1530.8, g: 0.05, type: 'sine' as const } // ~8.9x
+    ];
 
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 4);
+    harmonics.forEach(({ f, g, type }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = type;
+      osc.frequency.setValueAtTime(f, now);
+      // Subtle pitch drift to simulate the "singing" vibration
+      osc.frequency.linearRampToValueAtTime(f + (Math.random() * 0.5), now + 6);
+      
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(g, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 5.5);
+      
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 6);
+    });
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start();
-    osc.stop(ctx.currentTime + 4.1);
+    // Metallic "Strike" transient
+    const strike = ctx.createOscillator();
+    const strikeGain = ctx.createGain();
+    strike.type = 'triangle';
+    strike.frequency.setValueAtTime(800, now);
+    strike.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+    strikeGain.gain.setValueAtTime(0.3, now);
+    strikeGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+    strike.connect(strikeGain);
+    strikeGain.connect(masterGain);
+    strike.start(now);
+    strike.stop(now + 0.2);
   };
 
   const stopAudio = useCallback(() => {

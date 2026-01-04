@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface BreathGuideProps {
@@ -21,7 +22,7 @@ const BreathGuide: React.FC<BreathGuideProps> = ({ onComplete }) => {
             return 6;
           } else if (phase === 'Exhale') {
             const nextCycles = cycles + 1;
-            if (nextCycles >= 2) {
+            if (nextCycles >= 1) {
               setPhase('Settle');
               setTimeout(onComplete, 2000);
               return 0;
@@ -39,21 +40,45 @@ const BreathGuide: React.FC<BreathGuideProps> = ({ onComplete }) => {
     return () => clearInterval(timer);
   }, [phase, cycles, onComplete]);
 
+  // Determine transition duration based on phase
+  const getTransitionDuration = () => {
+    if (phase === 'Inhale') return '4000ms';
+    if (phase === 'Hold') return '4000ms';
+    if (phase === 'Exhale') return '6000ms';
+    return '1000ms';
+  };
+
+  // Determine scale based on phase
+  const getScale = () => {
+    if (phase === 'Inhale' || phase === 'Hold') return 'scale-[2.5]';
+    return 'scale-100';
+  };
+
   return (
     <div className="flex flex-col items-center justify-center space-y-12 animate-fade-in">
       <div className="relative flex items-center justify-center">
-        {/* Animated Breath Circle */}
+        {/* Animated Breath Circle - Outer Aura */}
         <div 
-          className={`absolute rounded-full border-2 border-temple-gold/30 transition-all duration-[4000ms] ease-in-out
-            ${phase === 'Inhale' ? 'scale-[2.5] opacity-20' : phase === 'Exhale' ? 'scale-100 opacity-10' : 'scale-[2.5] opacity-20'}
+          className={`absolute rounded-full border-2 border-temple-gold/30 transition-all ease-in-out ${getScale()}
+            ${phase === 'Exhale' ? 'opacity-10' : 'opacity-20'}
           `}
-          style={{ width: '100px', height: '100px' }}
+          style={{ 
+            width: '100px', 
+            height: '100px',
+            transitionDuration: getTransitionDuration()
+          }}
         />
+        
+        {/* Animated Breath Circle - Inner Glow */}
         <div 
-          className={`absolute rounded-full bg-temple-gold/10 transition-all duration-[4000ms] ease-in-out
-            ${phase === 'Inhale' ? 'scale-[2.5] opacity-100' : phase === 'Exhale' ? 'scale-100 opacity-50' : 'scale-[2.5] opacity-100'}
+          className={`absolute rounded-full bg-temple-gold/10 transition-all ease-in-out ${getScale()}
+            ${phase === 'Exhale' ? 'opacity-50' : 'opacity-100'}
           `}
-          style={{ width: '100px', height: '100px' }}
+          style={{ 
+            width: '100px', 
+            height: '100px',
+            transitionDuration: getTransitionDuration()
+          }}
         />
         
         {/* Center Label */}
@@ -68,7 +93,10 @@ const BreathGuide: React.FC<BreathGuideProps> = ({ onComplete }) => {
       </div>
       
       <p className="text-stone-500 font-sans italic text-center max-w-xs animate-pulse">
-        Let the breath anchor you to the present moment...
+        {phase === 'Inhale' && 'Breath in the light...'}
+        {phase === 'Hold' && 'Settle in the stillness...'}
+        {phase === 'Exhale' && 'Release all tension...'}
+        {phase === 'Settle' && 'Ready to receive.'}
       </p>
     </div>
   );
