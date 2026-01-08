@@ -53,11 +53,7 @@ export const fetchDailyWisdom = async (previousTerms: string[] = []): Promise<Dh
     
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Generate a profound Buddhist philosophical concept for a "Word of the Day" app. 
-      It should be a concept from Theravada, Mahayana, Zen, or Tibetan traditions.
-      Focus on concepts that offer psychological insight or ethical guidance.
-      ${excludeList}
-      Ensure the tone is serene, wise, and accessible to laypeople.`,
+      contents: [{ role: 'user', parts: [{ text: `Generate a profound Buddhist philosophical concept for a "Word of the Day" app. It should be a concept from Theravada, Mahayana, Zen, or Tibetan traditions. Focus on concepts that offer psychological insight or ethical guidance. ${excludeList} Ensure the tone is serene, wise, and accessible to laypeople.` }] }],
       config: {
         responseMimeType: "application/json",
         responseSchema: wisdomSchema,
@@ -81,10 +77,7 @@ export const generateReflectiveEcho = async (concept: string, reflection: string
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `The user is reflecting on the Buddhist concept of "${concept}". 
-      User's reflection: "${reflection}"
-      Provide a one-sentence "Dharma Echo"—a short, compassionate, and wise response that validates their feeling and connects it back to the essence of the teaching. 
-      The response should be very brief (under 20 words), warm, and supportive. Use a gentle, non-judgmental tone.`,
+      contents: [{ role: 'user', parts: [{ text: `The user is reflecting on the Buddhist concept of "${concept}". User's reflection: "${reflection}" Provide a one-sentence "Dharma Echo"—a short, compassionate, and wise response that validates their feeling and connects it back to the essence of the teaching. The response should be very brief (under 20 words), warm, and supportive. Use a gentle, non-judgmental tone.` }] }],
       config: {
         temperature: 0.8,
       },
@@ -101,8 +94,9 @@ export const generateWisdomAudio = async (text: string): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Read the following text with a very slow, calm, and soothing female voice, like a meditation teacher guiding a session. Take pauses between sections. ${text}` }] }],
+      contents: [{ role: 'user', parts: [{ text: `Speak slowly and serenely like a calm, soothing meditation teacher: ${text}` }] }],
       config: {
+        // systemInstruction removed to prevent internal errors on TTS endpoint
         responseModalities: [Modality.AUDIO],
         speechConfig: {
             voiceConfig: {
